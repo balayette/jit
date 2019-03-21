@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "stdjit.h"
+#include "log.h"
 
 void libjit_free_ast(struct libjit_ast *ast)
 {
@@ -20,4 +21,24 @@ struct libjit_ast *libjit_create_ast(enum libjit_op op, struct libjit_ast *left,
 	ast->right = right;
 
 	return ast;
+}
+
+int libjit_evaluate(struct libjit_ast *ast)
+{
+	switch(ast->op)
+	{
+		case ATOM:
+			return ast->value;
+		case ADD:
+			return libjit_evaluate(ast->left) + libjit_evaluate(ast->right);
+		case SUB:
+			return libjit_evaluate(ast->left) - libjit_evaluate(ast->right);
+		case MULT:
+			return libjit_evaluate(ast->left) * libjit_evaluate(ast->right);
+		case DIV:
+			return libjit_evaluate(ast->left) / libjit_evaluate(ast->right);
+	}
+
+	LIBJIT_DIE("unreachable");
+	return 0;
 }

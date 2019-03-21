@@ -1,3 +1,4 @@
+#include "test.h"
 #include "ast.h"
 #include <stdlib.h>
 
@@ -9,5 +10,5 @@ int main(void)
 
 	libjit_free_ast(root);
 
-	return 0;
+	return TEST_SUCESS;
 }

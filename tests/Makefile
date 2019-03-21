@@ -1,9 +1,11 @@
 CFLAGS = -Wall -Wextra -pedantic -std=c99 -g -MMD
 CPPFLAGS = -I../include/
+LDFLAGS = -lcriterion
 
 TESTS = \
 	health_check.c \
 	free_ast.c \
+	evaluate.c \
 
 TESTS_OBJ = $(TESTS_SRC:.c=.o)
 TESTS_EXE = $(addsuffix .test,$(basename $(TESTS)))
