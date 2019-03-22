@@ -65,4 +65,5 @@ Test(ctx_jit, passing)
 	libjit_handle hdl = libjit_ctx_add_ast(ctx, add);
 
 	cr_assert(libjit_ctx_jit(ctx, hdl));
+	cr_assert(libjit_ctx_evaluate(ctx, hdl) == 74432);
 }

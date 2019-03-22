@@ -12,7 +12,7 @@ struct libjit_ctx;
 libjit_handle libjit_ctx_add_ast(struct libjit_ctx *ctx,
 				 struct libjit_ast *ast);
 
-struct libjit_ctx* libjit_create_ctx(size_t asts);
+struct libjit_ctx *libjit_create_ctx(size_t asts);
 
 void libjit_free_ctx(struct libjit_ctx *ctx, bool free_asts);
 

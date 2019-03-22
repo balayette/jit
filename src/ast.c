@@ -79,4 +79,3 @@ void libjit_preorder(struct libjit_ast *ast,
 	libjit_preorder(ast->left, f, data);
 	libjit_preorder(ast->right, f, data);
 }
-

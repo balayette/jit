@@ -109,10 +109,10 @@ void libjit_free_ctx(struct libjit_ctx *ctx, bool free_asts)
 			libjit_free_ast(ctx->units[i].ast);
 	}
 
-	for (size_t i = 0; i < ctx->ast_num; i++)
-	{
+	for (size_t i = 0; i < ctx->ast_num; i++) {
 		if (ctx->units[i].jited)
-			munmap(ctx->units[i].map, PAGE_SIZE * ctx->units[i].page_count);
+			munmap(ctx->units[i].map,
+			       PAGE_SIZE * ctx->units[i].page_count);
 	}
 
 	libjit_free(ctx->units);

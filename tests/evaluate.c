@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <criterion/criterion.h>
 
-Test(evaluate, passing) {
+Test(evaluate, passing)
+{
 	// +
 	//   -
 	//     /
 	//       8989
-	//       4  
+	//       4
 	//     67
 	//   *
 	//     324
@@ -45,7 +46,7 @@ Test(evaluate, passing) {
 	cr_assert(ret == 324 * 223);
 
 	ret = libjit_evaluate(sub);
-	cr_assert(ret ==  (8989 / 4) - 67);
+	cr_assert(ret == (8989 / 4) - 67);
 
 	ret = libjit_evaluate(add);
 
