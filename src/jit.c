@@ -8,6 +8,8 @@
 
 #define PAGE_SIZE (4096)
 
+typedef int (*jited_function)(void);
+
 struct libjit_unit {
 	struct libjit_ast *ast;
 	bool jited;
@@ -32,9 +34,47 @@ static void setup_unit(struct libjit_unit *unit, struct libjit_ast *ast)
 	unit->page_count = 0;
 }
 
+static void compile_node(struct libjit_ast *ast, void *user_data)
+{
+	uint8_t **data = user_data;
+	switch (ast->op) {
+	case ADD:
+		*data += write_instr(INSTR_POP_B, 0, *data);
+		*data += write_instr(INSTR_POP_A, 0, *data);
+		*data += write_instr(INSTR_ADD, 0, *data);
+		*data += write_instr(INSTR_PUSH_A, 0, *data);
+		break;
+	case SUB:
+		*data += write_instr(INSTR_POP_B, 0, *data);
+		*data += write_instr(INSTR_POP_A, 0, *data);
+		*data += write_instr(INSTR_SUB, 0, *data);
+		*data += write_instr(INSTR_PUSH_A, 0, *data);
+		break;
+	case MULT:
+		*data += write_instr(INSTR_POP_B, 0, *data);
+		*data += write_instr(INSTR_POP_A, 0, *data);
+		*data += write_instr(INSTR_MULT, 0, *data);
+		*data += write_instr(INSTR_PUSH_A, 0, *data);
+		break;
+	case DIV:
+		*data += write_instr(INSTR_POP_B, 0, *data);
+		*data += write_instr(INSTR_POP_A, 0, *data);
+		*data += write_instr(INSTR_DIV, 0, *data);
+		*data += write_instr(INSTR_PUSH_A, 0, *data);
+		break;
+	case ATOM:
+		*data += write_instr(INSTR_PUSH_IMM, ast->value, *data);
+		break;
+	}
+}
+
 static bool jit_unit(struct libjit_unit *unit)
 {
 	uint8_t *curr = unit->map;
+
+	libjit_postorder(unit->ast, compile_node, &curr);
+
+	curr += write_instr(INSTR_POP_A, 0, curr);
 	curr += write_instr(INSTR_RET, 0, curr);
 
 	mprotect(unit->map, unit->page_count * PAGE_SIZE,
@@ -92,7 +132,11 @@ int libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl)
 {
 	ASSERT(ctx != NULL, "NULL context");
 	ASSERT(hdl < ctx->ast_num, "AST doesn't exist");
-	return libjit_evaluate(ctx->units[hdl].ast);
+	if (!ctx->units[hdl].jited)
+		return libjit_evaluate(ctx->units[hdl].ast);
+
+	jited_function f = (jited_function)ctx->units[hdl].map;
+	return f();
 }
 
 bool libjit_ctx_jit(struct libjit_ctx *ctx, libjit_handle hdl)
@@ -107,5 +151,6 @@ bool libjit_ctx_jit(struct libjit_ctx *ctx, libjit_handle hdl)
 	ctx->units[hdl].map = map(1);
 	ctx->units[hdl].page_count = 1;
 
-	return jit_unit(ctx->units + hdl);
+	ctx->units[hdl].jited = jit_unit(ctx->units + hdl);
+	return ctx->units[hdl].jited;
 }
