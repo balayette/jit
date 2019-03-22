@@ -16,11 +16,13 @@ enum instr {
 	INSTR_POP_A,
 	INSTR_POP_B,
 	INSTR_PUSH_IMM,
+	INSTR_PUSH_ADDR,
 	INSTR_POP_PARAM1,
+	INSTR_POP_PARAM2,
 	INSTR_CALL,
 	INSTR_RET
 };
 
-size_t write_instr(enum instr instr, void *value, uint8_t *offset);
+size_t write_instr(enum instr instr, int value, size_t addr, uint8_t *offset);
 
 #endif /* !ASS_H */

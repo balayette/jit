@@ -12,14 +12,17 @@
 #define POP_RAX (0x58)
 #define POP_RBX (0x5b)
 #define POP_RDI (0x5f)
+#define POP_RSI (0x5e)
 #define PUSH_RAX (0x50)
 #define PUSH_RBX (0x53)
+#define PUSH_RCX (0x51)
 #define MOV_RAX_RDI (0x00c78948)
 #define MOV_IMM_RAX (0x00c0c748)
-#define CALL_RAX (0xffd0)
+#define MOV_IMM_RCX_LARGE (0xb948)
+#define CALL_RCX (0xd1ff)
 #define RET (0xc3)
 
-size_t write_instr(enum instr instr, void *value, uint8_t *offset)
+size_t write_instr(enum instr instr, int value, size_t addr, uint8_t *offset)
 {
 	switch (instr) {
 	case INSTR_ADD:
@@ -41,8 +44,15 @@ size_t write_instr(enum instr instr, void *value, uint8_t *offset)
 		return 1;
 	case INSTR_PUSH_IMM:
 		*offset = PUSH_LARGE;
-		*((uint32_t *)(offset + 1)) = *(int *)value;
+		*((uint32_t *)(offset + 1)) = value;
 		return 5;
+	case INSTR_PUSH_ADDR:
+		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
+		offset += 2;
+		*(uint64_t *)offset = addr;
+		offset += 8;
+		*offset = PUSH_RCX;
+		return 11;
 	case INSTR_PUSH_A:
 		*offset = PUSH_RAX;
 		return 1;
@@ -58,14 +68,16 @@ size_t write_instr(enum instr instr, void *value, uint8_t *offset)
 	case INSTR_POP_PARAM1:
 		*offset = POP_RDI;
 		return 1;
+	case INSTR_POP_PARAM2:
+		*offset = POP_RSI;
+		return 1;
 	case INSTR_CALL:
-		*(uint32_t *)offset = MOV_IMM_RAX;
-		offset += 3;
-		*(uint32_t *)offset = *(libjit_handle *)value;
-		offset += 4;
-
-		*(uint16_t *)offset = CALL_RAX;
-		return 9;
+		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
+		offset += 2;
+		*(uint64_t *)offset = addr;
+		offset += 8;
+		*(uint16_t *)offset = CALL_RCX;
+		return 12;
 	default:
 		LIBJIT_DIE("Unhandled instruction\n");
 	}
