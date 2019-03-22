@@ -1,4 +1,6 @@
 #include "jit.h"
+#include <time.h>
+#include <stdio.h>
 
 int main(void)
 {
@@ -27,7 +29,22 @@ int main(void)
 	struct libjit_ctx *ctx = libjit_create_ctx(1);
 	libjit_handle hdl = libjit_ctx_add_ast(ctx, add);
 
+	clock_t t1 = clock();
+	for (int i = 0; i < 1000000; i++)
+		libjit_ctx_evaluate(ctx, hdl);
+	t1 = clock() - t1;
+	printf("Time taken (NON JIT): %f\n", (double)t1 / CLOCKS_PER_SEC);
+
 	libjit_ctx_jit(ctx, hdl);
+	clock_t t2 = clock();
+
+	for (int i = 0; i < 1000000; i++)
+		libjit_ctx_evaluate(ctx, hdl);
+	t2 = clock() - t2;
+
+	printf("Time taken (JIT): %f\n", (double)t2 / CLOCKS_PER_SEC);
+
+	printf("%ld%% faster.\n", 100 - t2 * 100 / t1);
 
 	libjit_free_ctx(ctx, 1);
 
