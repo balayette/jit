@@ -1,10 +1,15 @@
 #ifndef AST_H
 #define AST_H
 
-enum libjit_op { ADD, SUB, MULT, DIV, ATOM };
+#include <stddef.h>
+
+enum libjit_op { ADD, SUB, MULT, DIV, ATOM, CALL };
 
 struct libjit_ast {
-	int value;
+	union {
+		int value;
+		size_t hdl;
+	};
 	enum libjit_op op;
 	struct libjit_ast *left;
 	struct libjit_ast *right;

@@ -37,6 +37,9 @@ int libjit_evaluate(struct libjit_ast *ast)
 		return libjit_evaluate(ast->left) * libjit_evaluate(ast->right);
 	case DIV:
 		return libjit_evaluate(ast->left) / libjit_evaluate(ast->right);
+	case CALL:
+		// FIXME: Maybe allow CALL in non jited ASTs?
+		LIBJIT_DIE("Can not CALL in a non jited AST.");
 	}
 
 	LIBJIT_DIE("unreachable");
