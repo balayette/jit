@@ -34,6 +34,12 @@ static void setup_unit(struct libjit_unit *unit, struct libjit_ast *ast)
 	unit->page_count = 0;
 }
 
+static int call_handler(libjit_handle handle)
+{
+	(void)handle;
+	return 0;
+}
+
 static void compile_node(struct libjit_ast *ast, void *user_data)
 {
 	uint8_t **data = user_data;
@@ -62,8 +68,14 @@ static void compile_node(struct libjit_ast *ast, void *user_data)
 		*data += write_instr(INSTR_DIV, 0, *data);
 		*data += write_instr(INSTR_PUSH_A, 0, *data);
 		break;
+	case CALL:
+		*data += write_instr(INSTR_PUSH_IMM, &ast->hdl, *data);
+		*data += write_instr(INSTR_POP_PARAM1, 0, *data);
+		*data += write_instr(INSTR_CALL, &call_handler, *data);
+		*data += write_instr(INSTR_PUSH_A, 0, *data);
+		break;
 	case ATOM:
-		*data += write_instr(INSTR_PUSH_IMM, ast->value, *data);
+		*data += write_instr(INSTR_PUSH_IMM, &ast->value, *data);
 		break;
 	}
 }
