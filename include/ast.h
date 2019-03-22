@@ -1,11 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
-enum libjit_op { ADD,
-		 SUB,
-		 MULT,
-		 DIV,
-		 ATOM };
+enum libjit_op { ADD, SUB, MULT, DIV, ATOM };
 
 struct libjit_ast {
 	int value;
@@ -15,13 +11,13 @@ struct libjit_ast {
 };
 
 void libjit_preorder(struct libjit_ast *ast,
-		     void (*f)(struct libjit_ast *ast, void *), void *data);
+		     void (*f)(struct libjit_ast *, void *), void *data);
 
 void libjit_inorder(struct libjit_ast *ast,
-		    void (*f)(struct libjit_ast *ast, void *), void *data);
+		    void (*f)(struct libjit_ast *, void *), void *data);
 
 void libjit_postorder(struct libjit_ast *ast,
-		      void (*f)(struct libjit_ast *ast, void *), void *data);
+		      void (*f)(struct libjit_ast *, void *), void *data);
 
 void libjit_free_ast(struct libjit_ast *ast);
 

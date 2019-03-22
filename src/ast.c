@@ -44,7 +44,7 @@ int libjit_evaluate(struct libjit_ast *ast)
 }
 
 void libjit_postorder(struct libjit_ast *ast,
-		      void (*f)(struct libjit_ast *ast, void *), void *data)
+		      void (*f)(struct libjit_ast *, void *), void *data)
 {
 	if (!ast)
 		return;
@@ -56,7 +56,7 @@ void libjit_postorder(struct libjit_ast *ast,
 }
 
 void libjit_inorder(struct libjit_ast *ast,
-		    void (*f)(struct libjit_ast *ast, void *), void *data)
+		    void (*f)(struct libjit_ast *, void *), void *data)
 {
 	if (!ast)
 		return;
@@ -69,7 +69,7 @@ void libjit_inorder(struct libjit_ast *ast,
 }
 
 void libjit_preorder(struct libjit_ast *ast,
-		     void (*f)(struct libjit_ast *ast, void *), void *data)
+		     void (*f)(struct libjit_ast *, void *), void *data)
 {
 	if (!ast)
 		return;
