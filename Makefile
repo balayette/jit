@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -pedantic -std=c99 -g3 -MMD
+CFLAGS = -Wall -Wextra -std=c99 -g3 -MMD
 CPPFLAGS = -Iinclude/
 
 .PHONY: all
