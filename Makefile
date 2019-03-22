@@ -17,10 +17,13 @@ debug: CFLAGS += -Og
 debug: CPPFLAGS += -DJIT_DEBUG -DJIT_ASSERT
 debug: libjit.a
 
+demo: libjit.a
+
 SRC = \
 	src/ast.c \
 	src/stdjit.c \
 	src/jit.c \
+	src/ass.c \
 
 OBJ = $(SRC:.c=.o)
 
@@ -40,6 +43,7 @@ clean:
 	$(RM) libjit.a
 	$(RM) $(OBJ)
 	$(RM) $(DEP)
+	$(RM) demo
 	$(MAKE) -C tests clean
 
 -include $(DEP)

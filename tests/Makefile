@@ -6,6 +6,7 @@ TESTS = \
 	health_check.c \
 	free_ast.c \
 	evaluate.c \
+	ctx.c \
 
 TESTS_OBJ = $(TESTS_SRC:.c=.o)
 TESTS_EXE = $(addsuffix .test,$(basename $(TESTS)))
