@@ -40,16 +40,36 @@ static void setup_unit(struct libjit_unit *unit, struct libjit_ast *ast)
 	unit->page_count = 0;
 }
 
-static int call_handler(struct libjit_ctx *ctx, libjit_handle hdl)
-{
-	return libjit_ctx_evaluate(ctx, hdl);
-}
-
 struct compile_data {
 	uint8_t *curr;
 	struct libjit_ctx *ctx;
 	struct libjit_unit *unit;
 };
+
+static int libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *ast)
+{
+	switch (ast->op) {
+	case ATOM:
+		return ast->value;
+	case ADD:
+		return libjit_evaluate(ctx, ast->left) +
+		       libjit_evaluate(ctx, ast->right);
+	case SUB:
+		return libjit_evaluate(ctx, ast->left) -
+		       libjit_evaluate(ctx, ast->right);
+	case MULT:
+		return libjit_evaluate(ctx, ast->left) *
+		       libjit_evaluate(ctx, ast->right);
+	case DIV:
+		return libjit_evaluate(ctx, ast->left) /
+		       libjit_evaluate(ctx, ast->right);
+	case CALL:
+		return libjit_ctx_evaluate(ctx, ast->hdl);
+	}
+
+	LIBJIT_DIE("unreachable");
+	return 0;
+}
 
 #define INSTR(instr, value, addr, curr)                                        \
 	curr += write_instr(instr, value, addr, curr)
@@ -87,7 +107,7 @@ static void compile_node(struct libjit_ast *ast, void *user_data)
 		INSTR(INSTR_PUSH_ADDR, 0, (size_t)cdata->ctx, cdata->curr);
 		INSTR(INSTR_POP_PARAM1, 0, 0, cdata->curr);
 		INSTR(INSTR_POP_PARAM2, 0, 0, cdata->curr);
-		INSTR(INSTR_CALL, 0, (size_t)&call_handler, cdata->curr);
+		INSTR(INSTR_CALL, 0, (size_t)&libjit_ctx_evaluate, cdata->curr);
 		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case ATOM:
@@ -169,7 +189,7 @@ int libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl)
 	ASSERT(ctx != NULL, "NULL context");
 	ASSERT(hdl < ctx->ast_num, "AST doesn't exist");
 	if (!ctx->units[hdl].jited)
-		return libjit_evaluate(ctx->units[hdl].ast);
+		return libjit_evaluate(ctx, ctx->units[hdl].ast);
 
 	jited_function f = (jited_function)ctx->units[hdl].exec_unit->code;
 	return f();

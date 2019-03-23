@@ -26,11 +26,17 @@ int main(void)
 
 	struct libjit_ast *add = libjit_create_ast(ADD, sub, mul);
 
-	struct libjit_ctx *ctx = libjit_create_ctx(1);
+	struct libjit_ctx *ctx = libjit_create_ctx(2);
 	libjit_handle hdl = libjit_ctx_add_ast(ctx, add);
 
+	struct libjit_ast *call = libjit_create_ast(CALL, NULL, NULL);
+	call->hdl = hdl;
+
+	libjit_handle call_hdl = libjit_ctx_add_ast(ctx, call);
+	libjit_ctx_jit(ctx, call_hdl);
+
 	clock_t t1 = clock();
-	for (int i = 0; i < 1000000; i++)
+	for (int i = 0; i < 10000000; i++)
 		libjit_ctx_evaluate(ctx, hdl);
 	t1 = clock() - t1;
 	printf("Time taken (NON JIT): %f\n", (double)t1 / CLOCKS_PER_SEC);
@@ -38,8 +44,8 @@ int main(void)
 	libjit_ctx_jit(ctx, hdl);
 	clock_t t2 = clock();
 
-	for (int i = 0; i < 1000000; i++)
-		libjit_ctx_evaluate(ctx, hdl);
+	for (int i = 0; i < 10000000; i++)
+		libjit_ctx_evaluate(ctx, call_hdl);
 	t2 = clock() - t2;
 
 	printf("Time taken (JIT): %f\n", (double)t2 / CLOCKS_PER_SEC);

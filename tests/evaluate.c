@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "jit.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <criterion/criterion.h>
@@ -36,21 +37,28 @@ Test(evaluate, passing)
 
 	struct libjit_ast *add = libjit_create_ast(ADD, sub, mul);
 
-	int ret = libjit_evaluate(n8989);
-	cr_assert(ret == 8989);
+	struct libjit_ctx *ctx = libjit_create_ctx(9);
 
-	ret = libjit_evaluate(div);
-	cr_assert(ret == 8989 / 4);
+	libjit_handle h1 = libjit_ctx_add_ast(ctx, n8989);
+	libjit_handle h2 = libjit_ctx_add_ast(ctx, n4);
+	libjit_handle h3 = libjit_ctx_add_ast(ctx, n324);
+	libjit_handle h4 = libjit_ctx_add_ast(ctx, n223);
+	libjit_handle h5 = libjit_ctx_add_ast(ctx, n67);
+	libjit_handle h6 = libjit_ctx_add_ast(ctx, div);
+	libjit_handle h7 = libjit_ctx_add_ast(ctx, sub);
+	libjit_handle h8 = libjit_ctx_add_ast(ctx, mul);
+	libjit_handle h9 = libjit_ctx_add_ast(ctx, add);
 
-	ret = libjit_evaluate(mul);
-	cr_assert(ret == 324 * 223);
+	cr_assert(libjit_ctx_evaluate(ctx, h1) == 8989);
+	cr_assert(libjit_ctx_evaluate(ctx, h2) == 4);
+	cr_assert(libjit_ctx_evaluate(ctx, h3) == 324);
+	cr_assert(libjit_ctx_evaluate(ctx, h4) == 223);
+	cr_assert(libjit_ctx_evaluate(ctx, h5) == 67);
+	cr_assert(libjit_ctx_evaluate(ctx, h6) == 8989 / 4);
+	cr_assert(libjit_ctx_evaluate(ctx, h7) == (8989 / 4) - 67);
+	cr_assert(libjit_ctx_evaluate(ctx, h8) == 324 * 223);
+	cr_assert(libjit_ctx_evaluate(ctx, h9) == 74432);
 
-	ret = libjit_evaluate(sub);
-	cr_assert(ret == (8989 / 4) - 67);
-
-	ret = libjit_evaluate(add);
-
-	cr_assert(ret == 74432);
-
+	libjit_free_ctx(ctx, false);
 	libjit_free_ast(add);
 }

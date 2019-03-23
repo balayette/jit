@@ -1,4 +1,4 @@
-CFLAGS = -Wall -Wextra -pedantic -std=c99 -g -MMD
+CFLAGS = -Wall -Wextra -std=c99 -g -MMD
 CPPFLAGS = -I../include/
 LDFLAGS = -lcriterion
 
