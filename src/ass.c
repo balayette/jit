@@ -2,6 +2,175 @@
 #include "log.h"
 #include "jit.h"
 
+struct instruction {
+	uint64_t opcode;
+	const char *str;
+	size_t opcode_size;
+	bool payload_address;
+	bool payload_value;
+	size_t payload_size;
+};
+
+enum instruction_e {
+	ADD_RBX_RAX = 0,
+	SUB_RBX_RAX,
+	MUL_RBX,
+	CLEAR_RDX,
+	DIV_RBX,
+	PUSH_SMALL,
+	PUSH_LARGE,
+	POP_RAX,
+	POP_RBX,
+	POP_RDI,
+	POP_RSI,
+	PUSH_RAX,
+	PUSH_RBX,
+	PUSH_RCX,
+	MOV_RAX_RDI,
+	MOV_IMM_RAX,
+	MOV_IMM_RCX_LARGE,
+	CALL_RCX,
+	RET,
+};
+
+struct instruction instructions[] = {
+	[ADD_RBX_RAX] = {
+		.opcode = 0x00d80148,
+		.str = "ADD_RBX_RAX",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[SUB_RBX_RAX] = {
+		.opcode = 0x00d82948,
+		.str = "SUB_RBX_RAX",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[MUL_RBX] = {
+		.opcode = 0x00ebf748,
+		.str = "MUL_RBX",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[CLEAR_RDX] = {
+		.opcode = 0x99,
+		.str = "CLEAR_RDX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[DIV_RBX] = {
+		.opcode = 0x00fbf748,
+		.str = "DIV_RBX",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[PUSH_SMALL] = {
+		.opcode = 0x6a,
+		.str = "PUSH_SMALL",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[PUSH_LARGE] = {
+		.opcode = 0x68,
+		.str = "PUSH_LARGE",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[POP_RAX] = {
+		.opcode = 0x58,
+		.str = "POP_RAX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[POP_RBX] = {
+		.opcode = 0x5b,
+		.str = "POP_RBX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[POP_RDI] = {
+		.opcode = 0x5f,
+		.str = "POP_RDI",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[POP_RSI] = {
+		.opcode = 0x5e,
+		.str = "POP_RSI",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[PUSH_RAX] = {
+		.opcode = 0x50,
+		.str = "PUSH_RAX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[PUSH_RBX] = {
+		.opcode = 0x53,
+		.str = "PUSH_RBX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[PUSH_RCX] = {
+		.opcode = 0x51,
+		.str = "PUSH_RCX",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[MOV_RAX_RDI] = {
+		.opcode = 0x00c78948,
+		.str = "MOV_RAX_RDI",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[MOV_IMM_RAX] = {
+		.opcode = 0x00c0c748,
+		.str = "MOV_IMM_RAX",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = true,
+		.payload_size = 4,
+	},
+	[MOV_IMM_RCX_LARGE] = {
+		.opcode = 0xb948,
+		.str = "MOV_IMM_RCX_LARGE",
+		.opcode_size = 2,
+		.payload_address = true,
+		.payload_value = false,
+		.payload_size = 8,
+	},
+	[CALL_RCX] = {
+		.opcode = 0xd1ff,
+		.str = "CALL_RCX",
+		.opcode_size = 2,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[RET] = {
+		.opcode = 0xc3,
+		.str = "RET",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+};
+
 #define ADD_RBX_RAX (0x00d80148)
 #define SUB_RBX_RAX (0x00d82948)
 #define MUL_RBX (0x00ebf748)
