@@ -8,7 +8,7 @@
 
 #define PAGE_SIZE (4096)
 
-typedef int (*jited_function)(void);
+typedef libjit_value (*jited_function)(void);
 
 struct libjit_execution_unit {
 	struct libjit_ctx *context;
@@ -46,7 +46,7 @@ struct compile_data {
 	struct libjit_unit *unit;
 };
 
-static int libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *ast)
+static libjit_value libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *ast)
 {
 	switch (ast->op) {
 	case ATOM:
@@ -184,7 +184,7 @@ libjit_handle libjit_ctx_add_ast(struct libjit_ctx *ctx, struct libjit_ast *ast)
 	return ctx->ast_num++;
 }
 
-int libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl)
+libjit_value libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl)
 {
 	ASSERT(ctx != NULL, "NULL context");
 	ASSERT(hdl < ctx->ast_num, "AST doesn't exist");

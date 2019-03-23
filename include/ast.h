@@ -2,12 +2,15 @@
 #define AST_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 enum libjit_op { ADD, SUB, MULT, DIV, ATOM, CALL };
 
+typedef int64_t libjit_value;
+
 struct libjit_ast {
 	union {
-		int value;
+		libjit_value value;
 		size_t hdl;
 	};
 	enum libjit_op op;

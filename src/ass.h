@@ -3,11 +3,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "ast.h"
 
 /* I'm going to be using stack based evaluation because it's easier this way */
 
 enum instr {
-	INSTR_ADD,
+	INSTR_ADD = 0,
 	INSTR_SUB,
 	INSTR_MULT,
 	INSTR_DIV,
@@ -23,6 +24,6 @@ enum instr {
 	INSTR_RET
 };
 
-size_t write_instr(enum instr instr, int value, size_t addr, uint8_t *offset);
+size_t write_instr(enum instr instr, libjit_value value, size_t addr, uint8_t *offset);
 
 #endif /* !ASS_H */

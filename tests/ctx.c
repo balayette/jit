@@ -30,7 +30,7 @@ Test(ctx_evaluate, passing)
 	struct libjit_ctx *ctx = libjit_create_ctx(1);
 	libjit_handle hdl = libjit_ctx_add_ast(ctx, add);
 
-	int ret = libjit_ctx_evaluate(ctx, hdl);
+	libjit_value ret = libjit_ctx_evaluate(ctx, hdl);
 
 	cr_assert(ret == 74432);
 

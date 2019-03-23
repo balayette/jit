@@ -191,7 +191,7 @@ struct instruction instructions[] = {
 #define CALL_RCX (0xd1ff)
 #define RET (0xc3)
 
-size_t write_instr(enum instr instr, int value, size_t addr, uint8_t *offset)
+size_t write_instr(enum instr instr, libjit_value value, size_t addr, uint8_t *offset)
 {
 	switch (instr) {
 	case INSTR_ADD:

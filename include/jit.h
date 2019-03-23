@@ -16,7 +16,7 @@ struct libjit_ctx *libjit_create_ctx(size_t asts);
 
 void libjit_free_ctx(struct libjit_ctx *ctx, bool free_asts);
 
-int libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl);
+libjit_value libjit_ctx_evaluate(struct libjit_ctx *ctx, libjit_handle hdl);
 
 bool libjit_ctx_jit(struct libjit_ctx *ctx, libjit_handle hdl);
 
