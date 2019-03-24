@@ -3,7 +3,7 @@
 #include "jit.h"
 
 struct instruction {
-	uint64_t opcode;
+	uint8_t opcode[15];
 	const char *str;
 	size_t opcode_size;
 	bool payload_address;
@@ -17,7 +17,6 @@ enum instruction_e {
 	MUL_RBX,
 	CLEAR_RDX,
 	DIV_RBX,
-	PUSH_SMALL,
 	PUSH_LARGE,
 	POP_RAX,
 	POP_RBX,
@@ -35,112 +34,105 @@ enum instruction_e {
 
 struct instruction instructions[] = {
 	[ADD_RBX_RAX] = {
-		.opcode = 0x00d80148,
+		.opcode = {0x48, 0x01, 0xd8},
 		.str = "ADD_RBX_RAX",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[SUB_RBX_RAX] = {
-		.opcode = 0x00d82948,
+		.opcode = {0x48, 0x29, 0xd8},
 		.str = "SUB_RBX_RAX",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MUL_RBX] = {
-		.opcode = 0x00ebf748,
+		.opcode = {0x48, 0xf7, 0xeb},
 		.str = "MUL_RBX",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[CLEAR_RDX] = {
-		.opcode = 0x99,
+		.opcode = {0x99},
 		.str = "CLEAR_RDX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[DIV_RBX] = {
-		.opcode = 0x00fbf748,
+		.opcode = {0x48, 0xf7, 0xfb},
 		.str = "DIV_RBX",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
-	[PUSH_SMALL] = {
-		.opcode = 0x6a,
-		.str = "PUSH_SMALL",
-		.opcode_size = 1,
-		.payload_address = false,
-		.payload_value = false,
-	},
 	[PUSH_LARGE] = {
-		.opcode = 0x68,
+		.opcode = {0x68},
 		.str = "PUSH_LARGE",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RAX] = {
-		.opcode = 0x58,
+		.opcode = {0x58},
 		.str = "POP_RAX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RBX] = {
-		.opcode = 0x5b,
+		.opcode = {0x5b},
 		.str = "POP_RBX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RDI] = {
-		.opcode = 0x5f,
+		.opcode = {0x5f},
 		.str = "POP_RDI",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RSI] = {
-		.opcode = 0x5e,
+		.opcode = {0x5e},
 		.str = "POP_RSI",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RAX] = {
-		.opcode = 0x50,
+		.opcode = {0x50},
 		.str = "PUSH_RAX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RBX] = {
-		.opcode = 0x53,
+		.opcode = {0x53},
 		.str = "PUSH_RBX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RCX] = {
-		.opcode = 0x51,
+		.opcode = {0x51},
 		.str = "PUSH_RCX",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MOV_RAX_RDI] = {
-		.opcode = 0x00c78948,
+		.opcode = {0x48, 0x89, 0xc7},
 		.str = "MOV_RAX_RDI",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MOV_IMM_RAX] = {
-		.opcode = 0x00c0c748,
+		.opcode = {0x48, 0xc7, 0xc0},
 		.str = "MOV_IMM_RAX",
 		.opcode_size = 3,
 		.payload_address = false,
@@ -148,7 +140,7 @@ struct instruction instructions[] = {
 		.payload_size = 4,
 	},
 	[MOV_IMM_RCX_LARGE] = {
-		.opcode = 0xb948,
+		.opcode = {0x48, 0xb9},
 		.str = "MOV_IMM_RCX_LARGE",
 		.opcode_size = 2,
 		.payload_address = true,
@@ -156,20 +148,21 @@ struct instruction instructions[] = {
 		.payload_size = 8,
 	},
 	[CALL_RCX] = {
-		.opcode = 0xd1ff,
+		.opcode = {0xff, 0xd1},
 		.str = "CALL_RCX",
 		.opcode_size = 2,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[RET] = {
-		.opcode = 0xc3,
+		.opcode = {0xc3},
 		.str = "RET",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
-};
+}
+;
 
 #define ADD_RBX_RAX (0x00d80148)
 #define SUB_RBX_RAX (0x00d82948)
