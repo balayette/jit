@@ -191,56 +191,102 @@ struct instruction instructions[] = {
 #define CALL_RCX (0xd1ff)
 #define RET (0xc3)
 
-size_t write_instr(enum instr instr, libjit_value value, size_t addr, uint8_t *offset)
+typedef uint8_t *(*instruction_handler)(enum instruction_e instr, libjit_value value,
+					void *addr, uint8_t *offset);
+
+uint8_t *handle_simple_instr(enum instruction_e instr, libjit_value value, void *addr,
+			     uint8_t *offset)
 {
-	switch (instr) {
-	case INSTR_ADD:
+	(void)instr;
+	(void)value;
+	(void)addr;
+	(void)offset;
+	return NULL;
+}
+
+uint8_t *handle_complex_instr(enum instruction_e instr, libjit_value value, void *addr,
+			      uint8_t *offset)
+{
+	(void)instr;
+	(void)value;
+	(void)addr;
+	(void)offset;
+	return NULL;
+}
+
+uint8_t *instruction_unknown(enum instruction_e instr, libjit_value value, void *addr,
+			     uint8_t *offset)
+{
+	(void)instr;
+	(void)value;
+	(void)addr;
+	(void)offset;
+
+	LIBJIT_DIE("Instruction %d unknown.", instr);
+	return NULL;
+}
+
+uint8_t *write_instr2(enum instruction_e instr, libjit_value value, void *addr,
+		   uint8_t *offset)
+{
+	(void)value;
+	(void)addr;
+	for (size_t i = 0; i < instructions[instr].opcode_size; i++, offset++)
+		*offset = instructions[instr].opcode[i];
+
+	return offset;
+}
+
+size_t write_operation(enum operation operation, libjit_value value, size_t addr,
+		   uint8_t *offset)
+{
+	switch (operation) {
+	case OPER_ADD:
 		*((uint32_t *)offset) = ADD_RBX_RAX;
 		return 3;
-	case INSTR_SUB:
+	case OPER_SUB:
 		*((uint32_t *)offset) = SUB_RBX_RAX;
 		return 3;
-	case INSTR_MULT:
+	case OPER_MULT:
 		*((uint32_t *)offset) = MUL_RBX;
 		return 3;
-	case INSTR_DIV:
+	case OPER_DIV:
 		*offset = CLEAR_RDX;
 		offset++;
 		*((uint32_t *)offset) = DIV_RBX;
 		return 4;
-	case INSTR_RET:
+	case OPER_RET:
 		*((uint8_t *)offset) = RET;
 		return 1;
-	case INSTR_PUSH_IMM:
-		*offset = PUSH_LARGE;
-		*((uint32_t *)(offset + 1)) = value;
-		return 5;
-	case INSTR_PUSH_ADDR:
+	case OPER_PUSH_ADDR:
+		value = addr;
+		// fall through
+	case OPER_PUSH_IMM:
 		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
 		offset += 2;
-		*(uint64_t *)offset = addr;
+		*(uint64_t *)offset = value;
 		offset += 8;
 		*offset = PUSH_RCX;
 		return 11;
-	case INSTR_PUSH_A:
+	case OPER_PUSH_A:
 		*offset = PUSH_RAX;
 		return 1;
-	case INSTR_PUSH_B:
+	case OPER_PUSH_B:
 		*offset = PUSH_RBX;
 		return 1;
-	case INSTR_POP_A:
+	case OPER_POP_A:
 		*offset = POP_RAX;
 		return 1;
-	case INSTR_POP_B:
+	case OPER_POP_B:
 		*offset = POP_RBX;
 		return 1;
-	case INSTR_POP_PARAM1:
+	case OPER_POP_PARAM1:
 		*offset = POP_RDI;
 		return 1;
-	case INSTR_POP_PARAM2:
+	case OPER_POP_PARAM2:
 		*offset = POP_RSI;
 		return 1;
-	case INSTR_CALL:
+	case OPER_CALL:
 		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
 		offset += 2;
 		*(uint64_t *)offset = addr;

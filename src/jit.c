@@ -71,47 +71,47 @@ static libjit_value libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *a
 	return 0;
 }
 
-#define INSTR(instr, value, addr, curr)                                        \
-	curr += write_instr(instr, value, addr, curr)
+#define OPER(instr, value, addr, curr)                                        \
+	curr += write_operation(instr, value, addr, curr)
 
 static void compile_node(struct libjit_ast *ast, void *user_data)
 {
 	struct compile_data *cdata = user_data;
 	switch (ast->op) {
 	case ADD:
-		INSTR(INSTR_POP_B, 0, 0, cdata->curr);
-		INSTR(INSTR_POP_A, 0, 0, cdata->curr);
-		INSTR(INSTR_ADD, 0, 0, cdata->curr);
-		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, 0, cdata->curr);
+		OPER(OPER_ADD, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case SUB:
-		INSTR(INSTR_POP_B, 0, 0, cdata->curr);
-		INSTR(INSTR_POP_A, 0, 0, cdata->curr);
-		INSTR(INSTR_SUB, 0, 0, cdata->curr);
-		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, 0, cdata->curr);
+		OPER(OPER_SUB, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case MULT:
-		INSTR(INSTR_POP_B, 0, 0, cdata->curr);
-		INSTR(INSTR_POP_A, 0, 0, cdata->curr);
-		INSTR(INSTR_MULT, 0, 0, cdata->curr);
-		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, 0, cdata->curr);
+		OPER(OPER_MULT, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case DIV:
-		INSTR(INSTR_POP_B, 0, 0, cdata->curr);
-		INSTR(INSTR_POP_A, 0, 0, cdata->curr);
-		INSTR(INSTR_DIV, 0, 0, cdata->curr);
-		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, 0, cdata->curr);
+		OPER(OPER_DIV, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case CALL:
-		INSTR(INSTR_PUSH_IMM, ast->hdl, 0, cdata->curr);
-		INSTR(INSTR_PUSH_ADDR, 0, (size_t)cdata->ctx, cdata->curr);
-		INSTR(INSTR_POP_PARAM1, 0, 0, cdata->curr);
-		INSTR(INSTR_POP_PARAM2, 0, 0, cdata->curr);
-		INSTR(INSTR_CALL, 0, (size_t)&libjit_ctx_evaluate, cdata->curr);
-		INSTR(INSTR_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_IMM, ast->hdl, 0, cdata->curr);
+		OPER(OPER_PUSH_ADDR, 0, (size_t)cdata->ctx, cdata->curr);
+		OPER(OPER_POP_PARAM1, 0, 0, cdata->curr);
+		OPER(OPER_POP_PARAM2, 0, 0, cdata->curr);
+		OPER(OPER_CALL, 0, (size_t)&libjit_ctx_evaluate, cdata->curr);
+		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
 		break;
 	case ATOM:
-		INSTR(INSTR_PUSH_IMM, ast->value, 0, cdata->curr);
+		OPER(OPER_PUSH_IMM, ast->value, 0, cdata->curr);
 		break;
 	}
 }
@@ -124,8 +124,8 @@ static bool jit_unit(struct libjit_ctx *ctx, struct libjit_unit *unit)
 
 	libjit_postorder(unit->ast, compile_node, &data);
 
-	data.curr += write_instr(INSTR_POP_A, 0, 0, data.curr);
-	data.curr += write_instr(INSTR_RET, 0, 0, data.curr);
+	data.curr += write_operation(OPER_POP_A, 0, 0, data.curr);
+	data.curr += write_operation(OPER_RET, 0, 0, data.curr);
 
 	mprotect(unit->exec_unit, unit->page_count * PAGE_SIZE,
 		 PROT_READ | PROT_EXEC);
