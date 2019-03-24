@@ -39,7 +39,7 @@ enum operation {
 	OPER_COUNT,
 };
 
-size_t write_operation(enum operation operation, libjit_value value, size_t addr,
+uint8_t *write_operation(enum operation operation, libjit_value value, size_t addr,
 		   uint8_t *offset);
 
 #endif /* !ASS_H */

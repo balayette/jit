@@ -72,7 +72,7 @@ static libjit_value libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *a
 }
 
 #define OPER(instr, value, addr, curr)                                        \
-	curr += write_operation(instr, value, addr, curr)
+	curr = write_operation(instr, value, addr, curr)
 
 static void compile_node(struct libjit_ast *ast, void *user_data)
 {
@@ -124,8 +124,8 @@ static bool jit_unit(struct libjit_ctx *ctx, struct libjit_unit *unit)
 
 	libjit_postorder(unit->ast, compile_node, &data);
 
-	data.curr += write_operation(OPER_POP_A, 0, 0, data.curr);
-	data.curr += write_operation(OPER_RET, 0, 0, data.curr);
+	OPER(OPER_POP_A, 0, 0, data.curr);
+	OPER(OPER_RET, 0, 0, data.curr);
 
 	mprotect(unit->exec_unit, unit->page_count * PAGE_SIZE,
 		 PROT_READ | PROT_EXEC);

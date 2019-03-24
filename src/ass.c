@@ -230,27 +230,27 @@ uint8_t *write_instr2(enum instruction_e instr, libjit_value value, void *addr,
 	return offset;
 }
 
-size_t write_operation(enum operation operation, libjit_value value, size_t addr,
-		   uint8_t *offset)
+uint8_t *write_operation(enum operation operation, libjit_value value,
+			 size_t addr, uint8_t *offset)
 {
 	switch (operation) {
 	case OPER_ADD:
 		*((uint32_t *)offset) = ADD_RBX_RAX;
-		return 3;
+		return offset + 3;
 	case OPER_SUB:
 		*((uint32_t *)offset) = SUB_RBX_RAX;
-		return 3;
+		return offset + 3;
 	case OPER_MULT:
 		*((uint32_t *)offset) = MUL_RBX;
-		return 3;
+		return offset + 3;
 	case OPER_DIV:
 		*offset = CLEAR_RDX;
 		offset++;
 		*((uint32_t *)offset) = DIV_RBX;
-		return 4;
+		return offset + 3;
 	case OPER_RET:
 		*((uint8_t *)offset) = RET;
-		return 1;
+		return offset + 1;
 	case OPER_PUSH_ADDR:
 		value = addr;
 		// fall through
@@ -260,32 +260,32 @@ size_t write_operation(enum operation operation, libjit_value value, size_t addr
 		*(uint64_t *)offset = value;
 		offset += 8;
 		*offset = PUSH_RCX;
-		return 11;
+		return offset + 1;
 	case OPER_PUSH_A:
 		*offset = PUSH_RAX;
-		return 1;
+		return offset + 1;
 	case OPER_PUSH_B:
 		*offset = PUSH_RBX;
-		return 1;
+		return offset + 1;
 	case OPER_POP_A:
 		*offset = POP_RAX;
-		return 1;
+		return offset + 1;
 	case OPER_POP_B:
 		*offset = POP_RBX;
-		return 1;
+		return offset + 1;
 	case OPER_POP_PARAM1:
 		*offset = POP_RDI;
-		return 1;
+		return offset + 1;
 	case OPER_POP_PARAM2:
 		*offset = POP_RSI;
-		return 1;
+		return offset + 1;
 	case OPER_CALL:
 		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
 		offset += 2;
 		*(uint64_t *)offset = addr;
 		offset += 8;
 		*(uint16_t *)offset = CALL_RCX;
-		return 12;
+		return offset + 2;
 	default:
 		LIBJIT_DIE("Unhandled instruction\n");
 	}
