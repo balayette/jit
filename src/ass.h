@@ -19,7 +19,6 @@ enum operation {
 	OPER_ADD = 0,
 	OPER_SUB,
 	OPER_MULT,
-	OPER_DIV,
 	/* Store / load */
 	OPER_PUSH_A,
 	OPER_PUSH_B,
@@ -27,19 +26,22 @@ enum operation {
 	OPER_POP_B,
 	OPER_POP_PARAM1,
 	OPER_POP_PARAM2,
-	/* Misc */
+	/* Control flow */
 	OPER_RET,
 
 	/* Complex operations*/
+	/* Math ops */
+	OPER_DIV,
+	/* Store / load */
 	OPER_PUSH_IMM,
-	OPER_PUSH_ADDR,
+	/* Control flow */
 	OPER_CALL,
 
 	/* Number of operations*/
 	OPER_COUNT,
 };
 
-uint8_t *write_operation(enum operation operation, libjit_value value, size_t addr,
-		   uint8_t *offset);
+uint8_t *write_operation(enum operation operation, size_t value,
+			 uint8_t *offset);
 
 #endif /* !ASS_H */

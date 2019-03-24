@@ -1,6 +1,10 @@
 #include "ass.h"
+#include "assert.h"
 #include "log.h"
 #include "jit.h"
+
+/* Only used for readability. */
+#define NO_VALUE (-1)
 
 struct instruction {
 	uint8_t opcode[15];
@@ -30,9 +34,10 @@ enum instruction_e {
 	MOV_IMM_RCX_LARGE,
 	CALL_RCX,
 	RET,
+	INSTR_COUNT,
 };
 
-struct instruction instructions[] = {
+static struct instruction instructions[] = {
 	[ADD_RBX_RAX] = {
 		.opcode = {0x48, 0x01, 0xd8},
 		.str = "ADD_RBX_RAX",
@@ -161,134 +166,109 @@ struct instruction instructions[] = {
 		.payload_address = false,
 		.payload_value = false,
 	},
-}
-;
+};
 
-#define ADD_RBX_RAX (0x00d80148)
-#define SUB_RBX_RAX (0x00d82948)
-#define MUL_RBX (0x00ebf748)
-#define CLEAR_RDX (0x99)
-#define DIV_RBX (0x00fbf748)
-#define PUSH_SMALL (0x6a)
-#define PUSH_LARGE (0x68)
-#define POP_RAX (0x58)
-#define POP_RBX (0x5b)
-#define POP_RDI (0x5f)
-#define POP_RSI (0x5e)
-#define PUSH_RAX (0x50)
-#define PUSH_RBX (0x53)
-#define PUSH_RCX (0x51)
-#define MOV_RAX_RDI (0x00c78948)
-#define MOV_IMM_RAX (0x00c0c748)
-#define MOV_IMM_RCX_LARGE (0xb948)
-#define CALL_RCX (0xd1ff)
-#define RET (0xc3)
-
-typedef uint8_t *(*instruction_handler)(enum instruction_e instr, libjit_value value,
-					void *addr, uint8_t *offset);
-
-uint8_t *handle_simple_instr(enum instruction_e instr, libjit_value value, void *addr,
+static uint8_t *instruction_unknown(enum instruction_e instr, libjit_value value,
 			     uint8_t *offset)
 {
 	(void)instr;
 	(void)value;
-	(void)addr;
-	(void)offset;
-	return NULL;
-}
-
-uint8_t *handle_complex_instr(enum instruction_e instr, libjit_value value, void *addr,
-			      uint8_t *offset)
-{
-	(void)instr;
-	(void)value;
-	(void)addr;
-	(void)offset;
-	return NULL;
-}
-
-uint8_t *instruction_unknown(enum instruction_e instr, libjit_value value, void *addr,
-			     uint8_t *offset)
-{
-	(void)instr;
-	(void)value;
-	(void)addr;
 	(void)offset;
 
 	LIBJIT_DIE("Instruction %d unknown.", instr);
 	return NULL;
 }
 
-uint8_t *write_instr2(enum instruction_e instr, libjit_value value, void *addr,
-		   uint8_t *offset)
+static uint8_t *write_address(uint8_t *offset, void *addr)
 {
-	(void)value;
-	(void)addr;
+	*(size_t **)offset = addr;
+	return offset + sizeof(size_t);
+}
+
+static uint8_t *write_value(uint8_t *offset, libjit_value value, size_t size)
+{
+	uint8_t *ptr = (uint8_t *)&value;
+	for (size_t i = 0; i < size; i++)
+		offset[i] = ptr[i];
+
+	return offset + size;
+}
+
+static uint8_t *write_instruction(enum instruction_e instr, libjit_value value,
+			   uint8_t *offset)
+{
+	if (instr >= INSTR_COUNT)
+		return instruction_unknown(instr, value, offset);
+
 	for (size_t i = 0; i < instructions[instr].opcode_size; i++, offset++)
 		*offset = instructions[instr].opcode[i];
+
+	if (instructions[instr].payload_address)
+		return write_address(offset, (void *)value);
+	if (instructions[instr].payload_value)
+		return write_value(offset, value,
+				   instructions[instr].payload_size);
 
 	return offset;
 }
 
-uint8_t *write_operation(enum operation operation, libjit_value value,
-			 size_t addr, uint8_t *offset)
-{
-	switch (operation) {
-	case OPER_ADD:
-		*((uint32_t *)offset) = ADD_RBX_RAX;
-		return offset + 3;
-	case OPER_SUB:
-		*((uint32_t *)offset) = SUB_RBX_RAX;
-		return offset + 3;
-	case OPER_MULT:
-		*((uint32_t *)offset) = MUL_RBX;
-		return offset + 3;
-	case OPER_DIV:
-		*offset = CLEAR_RDX;
-		offset++;
-		*((uint32_t *)offset) = DIV_RBX;
-		return offset + 3;
-	case OPER_RET:
-		*((uint8_t *)offset) = RET;
-		return offset + 1;
-	case OPER_PUSH_ADDR:
-		value = addr;
-		// fall through
-	case OPER_PUSH_IMM:
-		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
-		offset += 2;
-		*(uint64_t *)offset = value;
-		offset += 8;
-		*offset = PUSH_RCX;
-		return offset + 1;
-	case OPER_PUSH_A:
-		*offset = PUSH_RAX;
-		return offset + 1;
-	case OPER_PUSH_B:
-		*offset = PUSH_RBX;
-		return offset + 1;
-	case OPER_POP_A:
-		*offset = POP_RAX;
-		return offset + 1;
-	case OPER_POP_B:
-		*offset = POP_RBX;
-		return offset + 1;
-	case OPER_POP_PARAM1:
-		*offset = POP_RDI;
-		return offset + 1;
-	case OPER_POP_PARAM2:
-		*offset = POP_RSI;
-		return offset + 1;
-	case OPER_CALL:
-		*(uint16_t *)offset = MOV_IMM_RCX_LARGE;
-		offset += 2;
-		*(uint64_t *)offset = addr;
-		offset += 8;
-		*(uint16_t *)offset = CALL_RCX;
-		return offset + 2;
-	default:
-		LIBJIT_DIE("Unhandled instruction\n");
-	}
+typedef uint8_t *(*operation_handler)(enum operation operation,
+				      libjit_value value, uint8_t *offset);
 
-	return 0;
+static enum instruction_e simple_operation_mapping[] = {
+	[OPER_ADD] = ADD_RBX_RAX,    [OPER_SUB] = SUB_RBX_RAX,
+	[OPER_MULT] = MUL_RBX,	     [OPER_PUSH_A] = PUSH_RAX,
+	[OPER_PUSH_B] = PUSH_RBX,    [OPER_POP_A] = POP_RAX,
+	[OPER_POP_B] = POP_RBX,	     [OPER_POP_PARAM1] = POP_RDI,
+	[OPER_POP_PARAM2] = POP_RSI, [OPER_RET] = RET,
+};
+
+static uint8_t *simple_operation_handler(enum operation operation, libjit_value value,
+				  uint8_t *offset)
+{
+	return write_instruction(simple_operation_mapping[operation], value,
+				 offset);
+}
+
+static uint8_t *handle_division(enum operation operation, libjit_value value,
+			 uint8_t *offset)
+{
+	(void)operation;
+	(void)value;
+
+	offset = write_instruction(CLEAR_RDX, NO_VALUE, offset);
+	return write_instruction(DIV_RBX, NO_VALUE, offset);
+}
+
+static uint8_t *handle_call(enum operation operation, libjit_value value,
+		     uint8_t *offset)
+{
+	(void)operation;
+
+	offset = write_instruction(MOV_IMM_RCX_LARGE, value, offset);
+	return write_instruction(CALL_RCX, NO_VALUE, offset);
+}
+
+static uint8_t *handle_push_imm(enum operation operation, libjit_value value,
+			 uint8_t *offset)
+{
+	(void)operation;
+
+	offset = write_instruction(MOV_IMM_RCX_LARGE, value, offset);
+	return write_instruction(PUSH_RCX, NO_VALUE, offset);
+}
+
+static operation_handler operation_handlers[] = {
+	[SIMPLE_OPER_BEGIN... SIMPLE_OPER_END] = simple_operation_handler,
+	[OPER_DIV] = handle_division,
+	[OPER_PUSH_IMM] = handle_push_imm,
+	[OPER_CALL] = handle_call,
+};
+
+uint8_t *write_operation(enum operation operation, size_t value,
+			 uint8_t *offset)
+{
+	ASSERT(operation < OPER_COUNT, "Operation %d doesn't exist.",
+	       operation);
+	return operation_handlers[operation](operation, value, offset);
 }

@@ -46,7 +46,8 @@ struct compile_data {
 	struct libjit_unit *unit;
 };
 
-static libjit_value libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *ast)
+static libjit_value libjit_evaluate(struct libjit_ctx *ctx,
+				    struct libjit_ast *ast)
 {
 	switch (ast->op) {
 	case ATOM:
@@ -71,47 +72,46 @@ static libjit_value libjit_evaluate(struct libjit_ctx *ctx, struct libjit_ast *a
 	return 0;
 }
 
-#define OPER(instr, value, addr, curr)                                        \
-	curr = write_operation(instr, value, addr, curr)
+#define OPER(instr, value, curr) curr = write_operation(instr, value, curr)
 
 static void compile_node(struct libjit_ast *ast, void *user_data)
 {
 	struct compile_data *cdata = user_data;
 	switch (ast->op) {
 	case ADD:
-		OPER(OPER_POP_B, 0, 0, cdata->curr);
-		OPER(OPER_POP_A, 0, 0, cdata->curr);
-		OPER(OPER_ADD, 0, 0, cdata->curr);
-		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, cdata->curr);
+		OPER(OPER_ADD, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case SUB:
-		OPER(OPER_POP_B, 0, 0, cdata->curr);
-		OPER(OPER_POP_A, 0, 0, cdata->curr);
-		OPER(OPER_SUB, 0, 0, cdata->curr);
-		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, cdata->curr);
+		OPER(OPER_SUB, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case MULT:
-		OPER(OPER_POP_B, 0, 0, cdata->curr);
-		OPER(OPER_POP_A, 0, 0, cdata->curr);
-		OPER(OPER_MULT, 0, 0, cdata->curr);
-		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, cdata->curr);
+		OPER(OPER_MULT, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case DIV:
-		OPER(OPER_POP_B, 0, 0, cdata->curr);
-		OPER(OPER_POP_A, 0, 0, cdata->curr);
-		OPER(OPER_DIV, 0, 0, cdata->curr);
-		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_POP_B, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, cdata->curr);
+		OPER(OPER_DIV, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case CALL:
-		OPER(OPER_PUSH_IMM, ast->hdl, 0, cdata->curr);
-		OPER(OPER_PUSH_ADDR, 0, (size_t)cdata->ctx, cdata->curr);
-		OPER(OPER_POP_PARAM1, 0, 0, cdata->curr);
-		OPER(OPER_POP_PARAM2, 0, 0, cdata->curr);
-		OPER(OPER_CALL, 0, (size_t)&libjit_ctx_evaluate, cdata->curr);
-		OPER(OPER_PUSH_A, 0, 0, cdata->curr);
+		OPER(OPER_PUSH_IMM, ast->hdl, cdata->curr);
+		OPER(OPER_PUSH_IMM, (size_t)cdata->ctx, cdata->curr);
+		OPER(OPER_POP_PARAM1, 0, cdata->curr);
+		OPER(OPER_POP_PARAM2, 0, cdata->curr);
+		OPER(OPER_CALL, (size_t)&libjit_ctx_evaluate, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case ATOM:
-		OPER(OPER_PUSH_IMM, ast->value, 0, cdata->curr);
+		OPER(OPER_PUSH_IMM, ast->value, cdata->curr);
 		break;
 	}
 }
@@ -124,8 +124,8 @@ static bool jit_unit(struct libjit_ctx *ctx, struct libjit_unit *unit)
 
 	libjit_postorder(unit->ast, compile_node, &data);
 
-	OPER(OPER_POP_A, 0, 0, data.curr);
-	OPER(OPER_RET, 0, 0, data.curr);
+	OPER(OPER_POP_A, 0, data.curr);
+	OPER(OPER_RET, 0, data.curr);
 
 	mprotect(unit->exec_unit, unit->page_count * PAGE_SIZE,
 		 PROT_READ | PROT_EXEC);
