@@ -27,6 +27,7 @@ enum operation {
 	OPER_POP_PARAM1,
 	OPER_POP_PARAM2,
 	/* Control flow */
+	OPER_FUNCTION_EPILOGUE,
 	OPER_RET,
 
 	/* Complex operations*/
@@ -35,6 +36,7 @@ enum operation {
 	/* Store / load */
 	OPER_PUSH_IMM,
 	/* Control flow */
+	OPER_FUNCTION_PROLOGUE,
 	OPER_CALL,
 
 	/* Number of operations*/

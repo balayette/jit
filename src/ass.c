@@ -33,6 +33,9 @@ enum instruction_e {
 	MOV_IMM_RAX,
 	MOV_IMM_RCX_LARGE,
 	CALL_RCX,
+	PUSH_RBP,
+	MOV_RSP_RBP,
+	LEAVE,
 	RET,
 	INSTR_COUNT,
 };
@@ -159,6 +162,27 @@ static struct instruction instructions[] = {
 		.payload_address = false,
 		.payload_value = false,
 	},
+	[PUSH_RBP] = {
+		.opcode = {0x55},
+		.str = "push %rbp",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[MOV_RSP_RBP] = {
+		.opcode = {0x48, 0x89, 0xe5},
+		.str = "mov %rsp, %rbp",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[LEAVE] = {
+		.opcode = {0xc9},
+		.str = "leave",
+		.opcode_size = 1,
+		.payload_address = false,
+		.payload_value = false,
+	},
 	[RET] = {
 		.opcode = {0xc3},
 		.str = "RET",
@@ -168,8 +192,8 @@ static struct instruction instructions[] = {
 	},
 };
 
-static uint8_t *instruction_unknown(enum instruction_e instr, libjit_value value,
-			     uint8_t *offset)
+static uint8_t *instruction_unknown(enum instruction_e instr,
+				    libjit_value value, uint8_t *offset)
 {
 	(void)instr;
 	(void)value;
@@ -195,7 +219,7 @@ static uint8_t *write_value(uint8_t *offset, libjit_value value, size_t size)
 }
 
 static uint8_t *write_instruction(enum instruction_e instr, libjit_value value,
-			   uint8_t *offset)
+				  uint8_t *offset)
 {
 	if (instr >= INSTR_COUNT)
 		return instruction_unknown(instr, value, offset);
@@ -216,22 +240,28 @@ typedef uint8_t *(*operation_handler)(enum operation operation,
 				      libjit_value value, uint8_t *offset);
 
 static enum instruction_e simple_operation_mapping[] = {
-	[OPER_ADD] = ADD_RBX_RAX,    [OPER_SUB] = SUB_RBX_RAX,
-	[OPER_MULT] = MUL_RBX,	     [OPER_PUSH_A] = PUSH_RAX,
-	[OPER_PUSH_B] = PUSH_RBX,    [OPER_POP_A] = POP_RAX,
-	[OPER_POP_B] = POP_RBX,	     [OPER_POP_PARAM1] = POP_RDI,
-	[OPER_POP_PARAM2] = POP_RSI, [OPER_RET] = RET,
+	[OPER_ADD] = ADD_RBX_RAX,
+	[OPER_SUB] = SUB_RBX_RAX,
+	[OPER_MULT] = MUL_RBX,
+	[OPER_PUSH_A] = PUSH_RAX,
+	[OPER_PUSH_B] = PUSH_RBX,
+	[OPER_POP_A] = POP_RAX,
+	[OPER_POP_B] = POP_RBX,
+	[OPER_POP_PARAM1] = POP_RDI,
+	[OPER_POP_PARAM2] = POP_RSI,
+	[OPER_RET] = RET,
+	[OPER_FUNCTION_EPILOGUE] = LEAVE,
 };
 
-static uint8_t *simple_operation_handler(enum operation operation, libjit_value value,
-				  uint8_t *offset)
+static uint8_t *simple_operation_handler(enum operation operation,
+					 libjit_value value, uint8_t *offset)
 {
 	return write_instruction(simple_operation_mapping[operation], value,
 				 offset);
 }
 
 static uint8_t *handle_division(enum operation operation, libjit_value value,
-			 uint8_t *offset)
+				uint8_t *offset)
 {
 	(void)operation;
 	(void)value;
@@ -241,7 +271,7 @@ static uint8_t *handle_division(enum operation operation, libjit_value value,
 }
 
 static uint8_t *handle_call(enum operation operation, libjit_value value,
-		     uint8_t *offset)
+			    uint8_t *offset)
 {
 	(void)operation;
 
@@ -250,7 +280,7 @@ static uint8_t *handle_call(enum operation operation, libjit_value value,
 }
 
 static uint8_t *handle_push_imm(enum operation operation, libjit_value value,
-			 uint8_t *offset)
+				uint8_t *offset)
 {
 	(void)operation;
 
@@ -258,10 +288,21 @@ static uint8_t *handle_push_imm(enum operation operation, libjit_value value,
 	return write_instruction(PUSH_RCX, NO_VALUE, offset);
 }
 
+static uint8_t *handle_function_prologue(enum operation operation,
+					 libjit_value value, uint8_t *offset)
+{
+	(void)operation;
+	(void)value;
+
+	offset = write_instruction(PUSH_RBP, NO_VALUE, offset);
+	return write_instruction(MOV_RSP_RBP, NO_VALUE, offset);
+}
+
 static operation_handler operation_handlers[] = {
 	[SIMPLE_OPER_BEGIN... SIMPLE_OPER_END] = simple_operation_handler,
 	[OPER_DIV] = handle_division,
 	[OPER_PUSH_IMM] = handle_push_imm,
+	[OPER_FUNCTION_PROLOGUE] = handle_function_prologue,
 	[OPER_CALL] = handle_call,
 };
 
