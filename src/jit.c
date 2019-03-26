@@ -130,6 +130,8 @@ static bool jit_unit(struct libjit_ctx *ctx, struct libjit_unit *unit)
 	OPER(OPER_FUNCTION_EPILOGUE, 0, data.curr);
 	OPER(OPER_RET, 0, data.curr);
 
+	dump_instructions(unit->exec_unit->code, data.curr);
+
 	mprotect(unit->exec_unit, unit->page_count * PAGE_SIZE,
 		 PROT_READ | PROT_EXEC);
 

@@ -2,6 +2,7 @@
 #include "assert.h"
 #include "log.h"
 #include "jit.h"
+#include <string.h>
 
 /* Only used for readability. */
 #define NO_VALUE (-1)
@@ -21,7 +22,6 @@ enum instruction_e {
 	MUL_RBX,
 	CLEAR_RDX,
 	DIV_RBX,
-	PUSH_LARGE,
 	POP_RAX,
 	POP_RBX,
 	POP_RDI,
@@ -43,105 +43,98 @@ enum instruction_e {
 static struct instruction instructions[] = {
 	[ADD_RBX_RAX] = {
 		.opcode = {0x48, 0x01, 0xd8},
-		.str = "ADD_RBX_RAX",
+		.str = "add %rbx, %rax",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[SUB_RBX_RAX] = {
 		.opcode = {0x48, 0x29, 0xd8},
-		.str = "SUB_RBX_RAX",
+		.str = "sub %rbx, %rax",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MUL_RBX] = {
 		.opcode = {0x48, 0xf7, 0xeb},
-		.str = "MUL_RBX",
+		.str = "imul %rbx",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[CLEAR_RDX] = {
 		.opcode = {0x99},
-		.str = "CLEAR_RDX",
+		.str = "cldt",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[DIV_RBX] = {
 		.opcode = {0x48, 0xf7, 0xfb},
-		.str = "DIV_RBX",
+		.str = "idiv %rbx",
 		.opcode_size = 3,
-		.payload_address = false,
-		.payload_value = false,
-	},
-	[PUSH_LARGE] = {
-		.opcode = {0x68},
-		.str = "PUSH_LARGE",
-		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RAX] = {
 		.opcode = {0x58},
-		.str = "POP_RAX",
+		.str = "pop %rax",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RBX] = {
 		.opcode = {0x5b},
-		.str = "POP_RBX",
+		.str = "pop %rbx",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RDI] = {
 		.opcode = {0x5f},
-		.str = "POP_RDI",
+		.str = "pop %rdi",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[POP_RSI] = {
 		.opcode = {0x5e},
-		.str = "POP_RSI",
+		.str = "pop %rsi",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RAX] = {
 		.opcode = {0x50},
-		.str = "PUSH_RAX",
+		.str = "push %rax",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RBX] = {
 		.opcode = {0x53},
-		.str = "PUSH_RBX",
+		.str = "push %rbx",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[PUSH_RCX] = {
 		.opcode = {0x51},
-		.str = "PUSH_RCX",
+		.str = "push %rcx",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MOV_RAX_RDI] = {
 		.opcode = {0x48, 0x89, 0xc7},
-		.str = "MOV_RAX_RDI",
+		.str = "mov %rax, %rdi",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
 	},
 	[MOV_IMM_RAX] = {
 		.opcode = {0x48, 0xc7, 0xc0},
-		.str = "MOV_IMM_RAX",
+		.str = "mov $0x%lx, %rax",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = true,
@@ -149,7 +142,7 @@ static struct instruction instructions[] = {
 	},
 	[MOV_IMM_RCX_LARGE] = {
 		.opcode = {0x48, 0xb9},
-		.str = "MOV_IMM_RCX_LARGE",
+		.str = "mov $0x%lx, %rcx",
 		.opcode_size = 2,
 		.payload_address = true,
 		.payload_value = false,
@@ -157,7 +150,7 @@ static struct instruction instructions[] = {
 	},
 	[CALL_RCX] = {
 		.opcode = {0xff, 0xd1},
-		.str = "CALL_RCX",
+		.str = "call *%rcx",
 		.opcode_size = 2,
 		.payload_address = false,
 		.payload_value = false,
@@ -185,7 +178,7 @@ static struct instruction instructions[] = {
 	},
 	[RET] = {
 		.opcode = {0xc3},
-		.str = "RET",
+		.str = "ret",
 		.opcode_size = 1,
 		.payload_address = false,
 		.payload_value = false,
@@ -312,4 +305,36 @@ uint8_t *write_operation(enum operation operation, size_t value,
 	ASSERT(operation < OPER_COUNT, "Operation %d doesn't exist.",
 	       operation);
 	return operation_handlers[operation](operation, value, offset);
+}
+
+void dump_instructions(uint8_t *offset, uint8_t *end_offset)
+{
+	while (offset < end_offset) {
+		bool found = false;
+		for (enum instruction_e instr = ADD_RBX_RAX;
+		     instr < INSTR_COUNT && !found; instr++) {
+			struct instruction *instruction = instructions + instr;
+			if (offset + instruction->opcode_size +
+				    instruction->payload_size >
+			    end_offset)
+				continue;
+
+			if (memcmp(offset, instruction->opcode,
+				   instruction->opcode_size) != 0)
+				continue;
+
+			offset += instruction->opcode_size;
+			if (!instruction->payload_address &&
+			    !instruction->payload_value)
+				printf("%s\n", instruction->str);
+			else {
+				printf(instruction->str, *(size_t *)(offset));
+				printf("\n");
+				offset += sizeof(size_t);
+			}
+
+			found = true;
+		}
+		ASSERT(found, "Couldn't disassemble an instruction.\n");
+	}
 }

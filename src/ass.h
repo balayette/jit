@@ -46,4 +46,6 @@ enum operation {
 uint8_t *write_operation(enum operation operation, size_t value,
 			 uint8_t *offset);
 
+void dump_instructions(uint8_t *offset, uint8_t *end_offset);
+
 #endif /* !ASS_H */
