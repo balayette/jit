@@ -61,6 +61,9 @@ static libjit_value libjit_evaluate(struct libjit_ctx *ctx,
 	case MULT:
 		return libjit_evaluate(ctx, ast->left) *
 		       libjit_evaluate(ctx, ast->right);
+	case MOD:
+		return libjit_evaluate(ctx, ast->left) %
+		       libjit_evaluate(ctx, ast->right);
 	case DIV:
 		return libjit_evaluate(ctx, ast->left) /
 		       libjit_evaluate(ctx, ast->right);
@@ -94,6 +97,12 @@ static void compile_node(struct libjit_ast *ast, void *user_data)
 		OPER(OPER_POP_B, 0, cdata->curr);
 		OPER(OPER_POP_A, 0, cdata->curr);
 		OPER(OPER_MULT, 0, cdata->curr);
+		OPER(OPER_PUSH_A, 0, cdata->curr);
+		break;
+	case MOD:
+		OPER(OPER_POP_B, 0, cdata->curr);
+		OPER(OPER_POP_A, 0, cdata->curr);
+		OPER(OPER_MOD, 0, cdata->curr);
 		OPER(OPER_PUSH_A, 0, cdata->curr);
 		break;
 	case DIV:

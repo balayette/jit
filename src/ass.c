@@ -30,6 +30,7 @@ enum instruction_e {
 	PUSH_RBX,
 	PUSH_RCX,
 	MOV_RAX_RDI,
+	MOV_RDX_RAX,
 	MOV_IMM_RAX,
 	MOV_IMM_RCX_LARGE,
 	CALL_RCX,
@@ -128,6 +129,13 @@ static struct instruction instructions[] = {
 	[MOV_RAX_RDI] = {
 		.opcode = {0x48, 0x89, 0xc7},
 		.str = "mov %rax, %rdi",
+		.opcode_size = 3,
+		.payload_address = false,
+		.payload_value = false,
+	},
+	[MOV_RDX_RAX] = {
+		.opcode = {0x48, 0x89, 0xd0},
+		.str = "mov %rdx, %rax",
 		.opcode_size = 3,
 		.payload_address = false,
 		.payload_value = false,
@@ -263,6 +271,17 @@ static uint8_t *handle_division(enum operation operation, libjit_value value,
 	return write_instruction(DIV_RBX, NO_VALUE, offset);
 }
 
+static uint8_t *handle_mod(enum operation operation, libjit_value value,
+				uint8_t *offset)
+{
+	(void)operation;
+	(void)value;
+
+	offset = write_instruction(CLEAR_RDX, NO_VALUE, offset);
+	offset = write_instruction(DIV_RBX, NO_VALUE, offset);
+	return write_instruction(MOV_RDX_RAX, NO_VALUE, offset);
+}
+
 static uint8_t *handle_call(enum operation operation, libjit_value value,
 			    uint8_t *offset)
 {
@@ -294,6 +313,7 @@ static uint8_t *handle_function_prologue(enum operation operation,
 static operation_handler operation_handlers[] = {
 	[SIMPLE_OPER_BEGIN... SIMPLE_OPER_END] = simple_operation_handler,
 	[OPER_DIV] = handle_division,
+	[OPER_MOD] = handle_mod,
 	[OPER_PUSH_IMM] = handle_push_imm,
 	[OPER_FUNCTION_PROLOGUE] = handle_function_prologue,
 	[OPER_CALL] = handle_call,

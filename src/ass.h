@@ -33,6 +33,7 @@ enum operation {
 	/* Complex operations*/
 	/* Math ops */
 	OPER_DIV,
+	OPER_MOD,
 	/* Store / load */
 	OPER_PUSH_IMM,
 	/* Control flow */

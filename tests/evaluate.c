@@ -37,7 +37,9 @@ Test(evaluate, passing)
 
 	struct libjit_ast *add = libjit_create_ast(ADD, sub, mul);
 
-	struct libjit_ctx *ctx = libjit_create_ctx(9);
+	struct libjit_ast *mod = libjit_create_ast(MOD, add, n67);
+
+	struct libjit_ctx *ctx = libjit_create_ctx(10);
 
 	libjit_handle h1 = libjit_ctx_add_ast(ctx, n8989);
 	libjit_handle h2 = libjit_ctx_add_ast(ctx, n4);
@@ -48,6 +50,7 @@ Test(evaluate, passing)
 	libjit_handle h7 = libjit_ctx_add_ast(ctx, sub);
 	libjit_handle h8 = libjit_ctx_add_ast(ctx, mul);
 	libjit_handle h9 = libjit_ctx_add_ast(ctx, add);
+	libjit_handle h10 = libjit_ctx_add_ast(ctx, mod);
 
 	cr_assert(libjit_ctx_evaluate(ctx, h1) == 8989);
 	cr_assert(libjit_ctx_evaluate(ctx, h2) == 4);
@@ -58,6 +61,7 @@ Test(evaluate, passing)
 	cr_assert(libjit_ctx_evaluate(ctx, h7) == (8989 / 4) - 67);
 	cr_assert(libjit_ctx_evaluate(ctx, h8) == 324 * 223);
 	cr_assert(libjit_ctx_evaluate(ctx, h9) == 74432);
+	cr_assert(libjit_ctx_evaluate(ctx, h10) == 74432 % 67);
 
 	libjit_free_ctx(ctx, false);
 	libjit_free_ast(add);

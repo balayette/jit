@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum libjit_op { ADD, SUB, MULT, DIV, ATOM, CALL };
+enum libjit_op { ADD, SUB, MULT, DIV, MOD, ATOM, CALL };
 
 typedef int64_t libjit_value;
 
